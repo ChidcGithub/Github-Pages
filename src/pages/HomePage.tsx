@@ -1,23 +1,38 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router";
-import { Star, GitCommit, ExternalLink, FolderOpen } from "lucide-react";
-import { fetchRepos, fetchStats, GITHUB_USER } from "@/lib/github-api";
+import { Star, GitCommit, ExternalLink, FolderOpen, RefreshCw } from "lucide-react";
+import { fetchRepos, fetchStats, GITHUB_USER, clearCacheKey } from "@/lib/github-api";
 import type { GitHubRepo } from "@/lib/github-api";
 
 export function HomePage() {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [stats, setStats] = useState<{ totalStars: number; totalRepos: number; totalCommits: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(async (force = false) => {
+    try {
+      const [r, s] = await Promise.all([fetchRepos(force), fetchStats(force)]);
+      setRepos(r);
+      setStats(s);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    Promise.all([fetchRepos(), fetchStats()])
-      .then(([r, s]) => {
-        setRepos(r);
-        setStats(s);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+    loadData();
+  }, [loadData]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    clearCacheKey("repos");
+    clearCacheKey("stats");
+    loadData(true);
+  };
 
   const featured = repos.filter((r) => r.stargazers_count >= 1).slice(0, 6);
   const recent = repos.slice(0, 8);
@@ -25,7 +40,7 @@ export function HomePage() {
   if (loading) {
     return (
       <div style={{ padding: "80px 32px", textAlign: "center", color: "#57606a", fontSize: 15 }}>
-        Loading GitHub data...
+        Fetching GitHub data...
       </div>
     );
   }
@@ -35,17 +50,37 @@ export function HomePage() {
       {/* Hero */}
       <section style={{ padding: "64px 40px 48px" }}>
         <div style={{ maxWidth: 800 }}>
-          <h1
-            style={{
-              fontSize: 52,
-              fontWeight: 700,
-              color: "#57606a",
-              lineHeight: 1.3,
-              marginBottom: 16,
-            }}
-          >
-            Chidc
-          </h1>
+          <div className="flex items-center gap-2 mb-4">
+            <h1
+              style={{
+                fontSize: 52,
+                fontWeight: 700,
+                color: "#57606a",
+                lineHeight: 1.3,
+                margin: 0,
+              }}
+            >
+              Chidc
+            </h1>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              style={{
+                background: "none",
+                border: "1px solid #d0d7de",
+                borderRadius: 6,
+                padding: "4px 8px",
+                cursor: refreshing ? "wait" : "pointer",
+                color: "#57606a",
+                display: "flex",
+                alignItems: "center",
+                opacity: refreshing ? 0.6 : 1,
+              }}
+              title="Refresh data"
+            >
+              <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+            </button>
+          </div>
 
           <p style={{ fontSize: 17, lineHeight: 1.7, color: "#2d333b", maxWidth: 640, marginBottom: 24 }}>
             Hi, I&apos;m <strong>Chidc</strong> — a full-stack developer based in Changsha, China.

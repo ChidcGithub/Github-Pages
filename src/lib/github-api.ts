@@ -1,3 +1,5 @@
+import { getCached, setCached } from "./cache";
+
 const GITHUB_USER = "ChidcGithub";
 const GITHUB_API = "https://api.github.com";
 const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN;
@@ -73,7 +75,12 @@ async function githubFetch(path: string): Promise<unknown> {
 }
 
 /** Fetch all public repos for the user */
-export async function fetchRepos(): Promise<GitHubRepo[]> {
+export async function fetchRepos(forceRefresh = false): Promise<GitHubRepo[]> {
+  if (!forceRefresh) {
+    const cached = getCached<GitHubRepo[]>("repos");
+    if (cached) return cached;
+  }
+
   const repos: GitHubRepo[] = [];
   let page = 1;
   let hasMore = true;
@@ -87,13 +94,21 @@ export async function fetchRepos(): Promise<GitHubRepo[]> {
     page++;
   }
 
+  setCached("repos", repos);
   return repos;
 }
 
 /** Fetch README content for a repo (returns raw markdown string or null) */
-export async function fetchReadme(owner: string, repo: string): Promise<string | null> {
+export async function fetchReadme(owner: string, repo: string, forceRefresh = false): Promise<string | null> {
+  const cacheKey = `readme-${owner}-${repo}`;
+  if (!forceRefresh) {
+    const cached = getCached<string>(cacheKey);
+    if (cached !== null) return cached;
+  }
+
   // Try to find README with any extension
   const data = await githubFetch(`/repos/${owner}/${repo}/readme`) as GitHubReadme;
+  let result: string | null = null;
   if (data.content && data.encoding === "base64") {
     // Decode base64 to string
     const binary = atob(data.content);
@@ -103,12 +118,13 @@ export async function fetchReadme(owner: string, repo: string): Promise<string |
       for (let i = 0; i < binary.length; i++) {
         bytes[i] = binary.charCodeAt(i);
       }
-      return new TextDecoder("utf-8").decode(bytes);
+      result = new TextDecoder("utf-8").decode(bytes);
     } catch {
-      return binary;
+      result = binary;
     }
   }
-  return null;
+  setCached(cacheKey, result);
+  return result;
 }
 
 /** Fetch a README for the default branch specifically */
@@ -117,8 +133,13 @@ export async function fetchReadmeForRepo(repo: GitHubRepo): Promise<string | nul
 }
 
 /** Fetch user stats (contribution count, etc.) */
-export async function fetchStats(): Promise<GitHubStats> {
-  const repos = await fetchRepos();
+export async function fetchStats(forceRefresh = false): Promise<GitHubStats> {
+  if (!forceRefresh) {
+    const cached = getCached<GitHubStats>("stats");
+    if (cached) return cached;
+  }
+
+  const repos = await fetchRepos(forceRefresh);
 
   let totalCommits = 0;
   const yearsSet = new Set<number>();
@@ -142,7 +163,7 @@ export async function fetchStats(): Promise<GitHubStats> {
     }
   }
 
-  return {
+  const stats = {
     totalStars: repos.reduce((sum, r) => sum + r.stargazers_count, 0),
     totalRepos: repos.length,
     totalCommits,
@@ -150,6 +171,9 @@ export async function fetchStats(): Promise<GitHubStats> {
     totalIssues: 0,
     contributionYears: Array.from(yearsSet).sort((a, b) => b - a),
   };
+
+  setCached("stats", stats);
+  return stats;
 }
 
 /** Get language info for a repo */
@@ -164,3 +188,4 @@ export function getLanguageInfo(repo: GitHubRepo): { languages: RepoLanguage[]; 
 }
 
 export { GITHUB_USER, GITHUB_API };
+export { clearCacheKey, clearCache } from "./cache";

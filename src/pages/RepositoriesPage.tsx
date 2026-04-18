@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router";
-import { Star, Search, SortDesc } from "lucide-react";
-import { fetchRepos } from "@/lib/github-api";
+import { Star, Search, SortDesc, RefreshCw } from "lucide-react";
+import { fetchRepos, clearCacheKey } from "@/lib/github-api";
 import type { GitHubRepo } from "@/lib/github-api";
 
 type SortKey = "updated" | "stars" | "name" | "language";
@@ -16,15 +16,31 @@ const langColors: Record<string, string> = {
 export function RepositoriesPage() {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("updated");
 
-  useEffect(() => {
-    fetchRepos()
-      .then((r) => setRepos(r))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+  const loadData = useCallback(async (force = false) => {
+    try {
+      const r = await fetchRepos(force);
+      setRepos(r);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    clearCacheKey("repos");
+    loadData(true);
+  };
 
   const filtered = repos
     .filter((r) => {
@@ -54,9 +70,29 @@ export function RepositoriesPage() {
   return (
     <>
       <section style={{ padding: "64px 32px 48px" }}>
-        <h1 style={{ fontSize: 36, fontWeight: 300, color: "#57606a", lineHeight: 1.3, marginBottom: 8 }}>
-          All Repositories
-        </h1>
+        <div className="flex items-center gap-2 mb-4">
+          <h1 style={{ fontSize: 36, fontWeight: 300, color: "#57606a", lineHeight: 1.3, margin: 0 }}>
+            All Repositories
+          </h1>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            style={{
+              background: "none",
+              border: "1px solid #d0d7de",
+              borderRadius: 6,
+              padding: "4px 8px",
+              cursor: refreshing ? "wait" : "pointer",
+              color: "#57606a",
+              display: "flex",
+              alignItems: "center",
+              opacity: refreshing ? 0.6 : 1,
+            }}
+            title="Refresh data"
+          >
+            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+          </button>
+        </div>
         <p style={{ fontSize: 16, lineHeight: 1.6, color: "#2d333b", marginBottom: 24 }}>
           {repos.length} public repositories from <a href={`https://github.com/ChidcGithub`} target="_blank" rel="noopener noreferrer">GitHub</a>.
         </p>
