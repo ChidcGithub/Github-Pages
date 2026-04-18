@@ -1,0 +1,5 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "github-pages"
+compatibility_date = "2025-04-18"
+compatibility_flags = ["app_platform_allow_headers"]
+pages_build_output_dir = "dist"

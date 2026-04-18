@@ -1,4 +1,4 @@
 /assets/*
-  Content-Type: application/javascript
-/*.css
-  Content-Type: text/css
+  Cache-Control: no-cache, no-store, must-revalidate
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
