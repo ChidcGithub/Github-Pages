@@ -1,5 +1,6 @@
 const GITHUB_USER = "ChidcGithub";
 const GITHUB_API = "https://api.github.com";
+const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN;
 
 export interface GitHubRepo {
   name: string;
@@ -60,9 +61,11 @@ const languageColors: Record<string, string> = {
 };
 
 async function githubFetch(path: string): Promise<unknown> {
-  const res = await fetch(`${GITHUB_API}${path}`, {
-    headers: { Accept: "application/vnd.github+json" },
-  });
+  const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
+  if (GITHUB_TOKEN) {
+    headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
+  }
+  const res = await fetch(`${GITHUB_API}${path}`, { headers });
   if (!res.ok) {
     throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
   }
@@ -89,28 +92,23 @@ export async function fetchRepos(): Promise<GitHubRepo[]> {
 
 /** Fetch README content for a repo (returns raw markdown string or null) */
 export async function fetchReadme(owner: string, repo: string): Promise<string | null> {
-  try {
-    // Try to find README with any extension
-    const data = await githubFetch(`/repos/${owner}/${repo}/readme`) as GitHubReadme;
-    if (data.content && data.encoding === "base64") {
-      // Decode base64 to string
-      const binary = atob(data.content);
-      // Try to decode as UTF-8
-      try {
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i);
-        }
-        return new TextDecoder("utf-8").decode(bytes);
-      } catch {
-        return binary;
+  // Try to find README with any extension
+  const data = await githubFetch(`/repos/${owner}/${repo}/readme`) as GitHubReadme;
+  if (data.content && data.encoding === "base64") {
+    // Decode base64 to string
+    const binary = atob(data.content);
+    // Try to decode as UTF-8
+    try {
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
       }
+      return new TextDecoder("utf-8").decode(bytes);
+    } catch {
+      return binary;
     }
-    return null;
-  } catch {
-    // No README or error
-    return null;
   }
+  return null;
 }
 
 /** Fetch a README for the default branch specifically */

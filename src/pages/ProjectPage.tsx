@@ -4,6 +4,7 @@ import { ArrowLeft, ExternalLink, Star, Clock } from "lucide-react";
 import { fetchRepos, fetchReadme } from "@/lib/github-api";
 import type { GitHubRepo } from "@/lib/github-api";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { toast } from "sonner";
 
 const langColors: Record<string, string> = {
   Python: "#3572A5", JavaScript: "#f1e05a", TypeScript: "#3178c6",
@@ -32,7 +33,23 @@ export function ProjectPage() {
           setReadmeLoading(true);
           fetchReadme("ChidcGithub", name)
             .then((md) => setReadme(md))
-            .catch(() => setReadme(null))
+            .catch((err) => {
+              setReadme(null);
+              const status = err.message?.match(/(\d{3})/)?.[1];
+              if (status === "403") {
+                toast.warning("Failed to load README: access denied (403)", {
+                  description: "This repository may be private or rate-limited.",
+                  duration: 5000,
+                });
+              } else if (status === "404") {
+                // 404 means no README, not an error
+              } else {
+                toast.warning("Failed to load README", {
+                  description: err.message || "An unexpected error occurred.",
+                  duration: 5000,
+                });
+              }
+            })
             .finally(() => setReadmeLoading(false));
         }
       })
@@ -140,7 +157,7 @@ export function ProjectPage() {
 
       {/* Footer */}
       <footer style={{ padding: "32px", borderTop: "1px solid #d0d7de", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, color: "#57606a" }}>
-        <span>&copy; 2025 Chidc</span>
+        <span>&copy; 2026 Chidc</span>
         <span style={{ color: "#d0d7de" }}>|</span>
         <a href="https://github.com/ChidcGithub" target="_blank" rel="noopener noreferrer">GitHub</a>
         <span style={{ color: "#d0d7de" }}>|</span>

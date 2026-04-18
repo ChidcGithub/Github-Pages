@@ -160,7 +160,7 @@ export function RepositoriesPage() {
 
       {/* Footer */}
       <footer style={{ padding: "32px", borderTop: "1px solid #d0d7de", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, color: "#57606a" }}>
-        <span>&copy; 2025 Chidc</span>
+        <span>&copy; 2026 Chidc</span>
         <span style={{ color: "#d0d7de" }}>|</span>
         <a href="https://github.com/ChidcGithub" target="_blank" rel="noopener noreferrer">GitHub</a>
         <span style={{ color: "#d0d7de" }}>|</span>

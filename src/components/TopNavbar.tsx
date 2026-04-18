@@ -1,4 +1,4 @@
-import { FileCode, Github, Lightbulb, Search } from "lucide-react";
+import { FileCode, Github } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 const navLinks = [
@@ -24,23 +24,6 @@ export function TopNavbar() {
         </Link>
       </div>
 
-      {/* Center: Search */}
-      <div className="hidden sm:flex items-center flex-1 justify-center" style={{ maxWidth: 400 }}>
-        <div
-          className="flex items-center gap-2 px-3 w-full"
-          style={{
-            height: 32,
-            borderRadius: 6,
-            backgroundColor: "rgba(255,255,255,0.15)",
-          }}
-        >
-          <Search size={14} color="rgba(255,255,255,0.6)" />
-          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>
-            Search
-          </span>
-        </div>
-      </div>
-
       {/* Right: Nav links + GitHub */}
       <div className="flex items-center gap-3">
         <nav className="hidden md:flex items-center gap-1">
@@ -63,9 +46,6 @@ export function TopNavbar() {
           })}
         </nav>
 
-        <button className="flex items-center justify-center transition-opacity hover:opacity-80" style={{ color: "#fff" }}>
-          <Lightbulb size={18} />
-        </button>
         <a
           href="https://github.com/ChidcGithub"
           target="_blank"

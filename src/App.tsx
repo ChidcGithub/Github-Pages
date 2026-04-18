@@ -4,6 +4,7 @@ import { HomePage } from "@/pages/HomePage";
 import { RepositoriesPage } from "@/pages/RepositoriesPage";
 import { ProjectPage } from "@/pages/ProjectPage";
 import { Routes, Route } from "react-router";
+import { Toaster } from "@/components/ui/sonner";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           </Routes>
         </div>
       </main>
+      <Toaster position="top-right" richColors />
     </div>
   );
 }
