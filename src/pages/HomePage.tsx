@@ -1,7 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router";
-import { Star, GitCommit, ExternalLink, FolderOpen, RefreshCw } from "lucide-react";
-import { fetchRepos, fetchStats, GITHUB_USER, clearCacheKey } from "@/lib/github-api";
+import {
+  ArrowUpRight,
+  ChevronRight,
+  FolderOpen,
+  Github,
+  GitCommitHorizontal,
+  Mail,
+  MapPin,
+  RefreshCw,
+  Sparkles,
+  Star,
+} from "lucide-react";
+import { fetchRepos, fetchStats, languageColor, clearCacheKey } from "@/lib/github-api";
 import type { GitHubRepo } from "@/lib/github-api";
 
 export function HomePage() {
@@ -34,240 +45,196 @@ export function HomePage() {
     loadData(true);
   };
 
-  const featured = repos.filter((r) => r.stargazers_count >= 1).slice(0, 6);
+  const starred = repos.filter((r) => r.stargazers_count >= 1).slice(0, 6);
+  const featured = starred.length > 0 ? starred : repos.slice(0, 4);
   const recent = repos.slice(0, 8);
 
   if (loading) {
     return (
-      <div style={{ padding: "80px 32px", textAlign: "center", color: "#57606a", fontSize: 15 }}>
-        Fetching GitHub data...
+      <div className="flex flex-col items-center justify-center gap-4 py-32 text-on-surface-variant" role="status">
+        <span className="size-12 animate-spin rounded-full border-4 border-primary border-t-transparent" aria-hidden />
+        <span className="text-sm font-medium tracking-wide">Fetching GitHub data…</span>
       </div>
     );
   }
 
   return (
-    <>
-      {/* Hero */}
-      <section style={{ padding: "64px 40px 48px" }}>
-        <div style={{ maxWidth: 800 }}>
-          <div className="flex items-center gap-2 mb-4">
-            <h1
-              style={{
-                fontSize: 52,
-                fontWeight: 700,
-                color: "#57606a",
-                lineHeight: 1.3,
-                margin: 0,
-              }}
-            >
-              Chidc
-            </h1>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              style={{
-                background: "none",
-                border: "1px solid #d0d7de",
-                borderRadius: 6,
-                padding: "4px 8px",
-                cursor: refreshing ? "wait" : "pointer",
-                color: "#57606a",
-                display: "flex",
-                alignItems: "center",
-                opacity: refreshing ? 0.6 : 1,
-              }}
-              title="Refresh data"
-            >
-              <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+    <div>
+      {/* ------------------------------ Hero ------------------------------ */}
+      <section className="relative pt-10 sm:pt-16">
+        {/* Decorative blobs */}
+        <div aria-hidden className="pointer-events-none absolute -right-16 -top-6 size-48 rounded-full bg-primary-container opacity-50 blur-3xl sm:-right-24 sm:-top-10 sm:size-72" />
+        <div aria-hidden className="pointer-events-none absolute -left-20 top-40 size-40 rounded-full bg-tertiary-container opacity-40 blur-3xl sm:-left-28 sm:size-64" />
+
+        <div className="relative max-w-2xl">
+          <div className="flex items-center gap-3">
+            <span className="m3-chip-static border-transparent bg-primary-container text-on-primary-container">
+              <Sparkles size={14} />
+              GitHub Portfolio
+            </span>
+            <button type="button" onClick={handleRefresh} disabled={refreshing} aria-label="Refresh data" title="Refresh data" className="m3-icon-btn size-9 disabled:cursor-wait disabled:opacity-60">
+              <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
             </button>
           </div>
 
-          <p style={{ fontSize: 17, lineHeight: 1.7, color: "#2d333b", maxWidth: 640, marginBottom: 24 }}>
-            Hi, I&apos;m <strong>Chidc</strong> — a full-stack developer based in Changsha, China.
-            Currently a high school student passionate about AI/ML, developer tooling,
-            and cross-platform applications.
+          <h1 className="mt-5 text-[clamp(44px,9vw,76px)] font-extrabold leading-[1.02] tracking-tight text-on-surface">
+            Chidc<span className="text-primary">.</span>
+          </h1>
+
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-on-surface-variant">
+            Full-stack developer based in Changsha, China — a high school student passionate about{" "}
+            <span className="font-semibold text-on-surface">AI/ML</span>,{" "}
+            <span className="font-semibold text-on-surface">developer tooling</span> and{" "}
+            <span className="font-semibold text-on-surface">cross-platform apps</span>.
           </p>
 
-          {/* Quick stats */}
-          <div className="flex flex-wrap gap-3 mb-6">
-            <div className="flex items-center gap-2" style={{ padding: "10px 18px", backgroundColor: "#f6f8fa", borderRadius: 8 }}>
-              <Star size={16} color="#57606a" />
-              <span style={{ fontSize: 18, fontWeight: 600, color: "#2d333b" }}>{stats?.totalStars ?? 0}</span>
-              <span style={{ fontSize: 13, color: "#57606a" }}>Stars</span>
-            </div>
-            <div className="flex items-center gap-2" style={{ padding: "10px 18px", backgroundColor: "#f6f8fa", borderRadius: 8 }}>
-              <FolderOpen size={16} color="#57606a" />
-              <span style={{ fontSize: 18, fontWeight: 600, color: "#2d333b" }}>{stats?.totalRepos ?? repos.length}</span>
-              <span style={{ fontSize: 13, color: "#57606a" }}>Repos</span>
-            </div>
-            <div className="flex items-center gap-2" style={{ padding: "10px 18px", backgroundColor: "#f6f8fa", borderRadius: 8 }}>
-              <GitCommit size={16} color="#57606a" />
-              <span style={{ fontSize: 18, fontWeight: 600, color: "#2d333b" }}>{stats?.totalCommits ?? 0}+</span>
-              <span style={{ fontSize: 13, color: "#57606a" }}>Commits</span>
-            </div>
+          {/* CTA buttons */}
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link to="/repos" className="m3-btn m3-btn-filled m3-btn-lg no-underline">
+              <FolderOpen size={19} />
+              View repositories
+            </Link>
+            <a href="https://github.com/ChidcGithub" target="_blank" rel="noopener noreferrer" className="m3-btn m3-btn-outlined m3-btn-lg no-underline">
+              <Github size={18} />
+              GitHub profile
+              <ArrowUpRight size={16} />
+            </a>
           </div>
 
-          <div
-            style={{
-              borderLeft: "3px solid #0969da",
-              backgroundColor: "#f6f8fa",
-              padding: "14px 18px",
-              borderRadius: "0 6px 6px 0",
-              fontSize: 14,
-              lineHeight: 1.6,
-              color: "#2d333b",
-              marginBottom: 20,
-            }}
-          >
-            <strong>Open Source:</strong> {stats?.totalRepos ?? repos.length} public repositories with {stats?.totalStars ?? 0} total stars.
-            All code is available on <a href={`https://github.com/${GITHUB_USER}`} target="_blank" rel="noopener noreferrer" style={{ color: "#0969da" }}>GitHub</a>.
+          {/* Contact line */}
+          <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-on-surface-variant">
+            <span className="inline-flex items-center gap-1.5">
+              <MapPin size={15} className="text-primary" />
+              Changsha, China
+            </span>
+            <a href="mailto:chidcout@outlook.com" className="inline-flex items-center gap-1.5 font-medium underline-offset-4 transition-colors hover:text-primary hover:underline">
+              <Mail size={15} className="text-primary" />
+              chidcout@outlook.com
+            </a>
           </div>
-
-          <p style={{ fontSize: 14, lineHeight: 1.6, color: "#57606a" }}>
-            Contact: <a href="mailto:chidcout@outlook.com" style={{ color: "#0969da" }}>chidcout@outlook.com</a> &middot; Location: Changsha, China
-          </p>
         </div>
       </section>
 
-      {/* Featured Projects */}
-      {featured.length > 0 && (
-        <section style={{ padding: "40px 40px 56px", borderTop: "1px solid #d0d7de" }}>
-          <div style={{ maxWidth: 800 }}>
-            <div
-              className="font-medium"
-              style={{ fontSize: 12, color: "#57606a", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}
-            >
-              Featured
-            </div>
-            <h2 className="font-semibold" style={{ fontSize: 24, lineHeight: 1.3, color: "#2d333b", marginBottom: 24 }}>
-              Top Projects
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {featured.map((repo) => (
-                <Link
-                  key={repo.name}
-                  to={`/p/${repo.name}`}
-                  className="block bg-white transition-all duration-150"
-                  style={{ border: "1px solid #d0d7de", borderRadius: 8, padding: 22 }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#0969da";
-                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "#d0d7de";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="font-semibold" style={{ fontSize: 15, color: "#0969da", lineHeight: 1.3 }}>{repo.name}</span>
-                    <span className="flex items-center gap-1 flex-shrink-0" style={{ fontSize: 13, color: "#57606a" }}>
-                      <Star size={13} /> {repo.stargazers_count}
-                    </span>
-                  </div>
-                  {repo.description && (
-                    <p className="mt-2" style={{ fontSize: 13.5, lineHeight: 1.55, color: "#57606a" }}>
-                      {repo.description}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between mt-4 pt-4" style={{ borderTop: "1px solid #f0f3f6" }}>
-                    <div className="flex items-center gap-2">
-                      {repo.language && (
-                        <span className="flex items-center gap-1.5" style={{ fontSize: 12, color: "#57606a" }}>
-                          <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: getLanguageColor(repo.language), display: "inline-block" }} />
-                          {repo.language}
-                        </span>
-                      )}
-                      {repo.license?.spdx_id && repo.license.spdx_id !== "NOASSERTION" && (
-                        <span style={{ fontSize: 12, color: "#57606a" }}>{repo.license.spdx_id}</span>
-                      )}
-                    </div>
-                    <span className="flex items-center gap-1" style={{ fontSize: 12, color: "#0969da" }}>
-                      View README <ExternalLink size={12} />
-                    </span>
-                  </div>
-                </Link>
-              ))}
+      {/* ------------------------------ Stats ----------------------------- */}
+      <section className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-[28px] bg-primary-container p-6 text-on-primary-container">
+          <div className="flex flex-col gap-4">
+            <span className="grid size-11 place-items-center rounded-2xl bg-white/35 dark:bg-black/15">
+              <Star size={20} className="fill-current" />
+            </span>
+            <div>
+              <div className="text-[34px] font-extrabold leading-none tracking-tight tabular-nums">{stats?.totalStars ?? 0}</div>
+              <div className="mt-1.5 text-[13px] font-semibold uppercase tracking-wide opacity-70">Total stars</div>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+        <div className="rounded-[28px] bg-secondary-container p-6 text-on-secondary-container">
+          <div className="flex flex-col gap-4">
+            <span className="grid size-11 place-items-center rounded-2xl bg-white/35 dark:bg-black/15">
+              <FolderOpen size={20} />
+            </span>
+            <div>
+              <div className="text-[34px] font-extrabold leading-none tracking-tight tabular-nums">{stats?.totalRepos ?? repos.length}</div>
+              <div className="mt-1.5 text-[13px] font-semibold uppercase tracking-wide opacity-70">Repositories</div>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-[28px] bg-tertiary-container p-6 text-on-tertiary-container">
+          <div className="flex flex-col gap-4">
+            <span className="grid size-11 place-items-center rounded-2xl bg-white/35 dark:bg-black/15">
+              <GitCommitHorizontal size={20} />
+            </span>
+            <div>
+              <div className="text-[34px] font-extrabold leading-none tracking-tight tabular-nums">{stats?.totalCommits ?? 0}+</div>
+              <div className="mt-1.5 text-[13px] font-semibold uppercase tracking-wide opacity-70">Commits / year</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      {/* All Repos */}
-      <section style={{ padding: "40px 40px 56px", borderTop: "1px solid #d0d7de" }}>
-        <div style={{ maxWidth: 800 }}>
-          <h2 className="font-semibold" style={{ fontSize: 24, lineHeight: 1.3, color: "#2d333b", marginBottom: 8 }}>
-            Recent Repositories
-          </h2>
-          <p className="mb-5" style={{ fontSize: 14, color: "#57606a" }}>
-            Most recently updated repositories. <Link to="/repos" style={{ color: "#0969da" }}>View all &rarr;</Link>
-          </p>
+      {/* --------------------------- Featured ----------------------------- */}
+      {featured.length > 0 && (
+        <section className="mt-16">
+          <div className="m3-eyebrow">Featured</div>
+          <h2 className="text-[28px] font-bold tracking-tight text-on-surface">Top projects</h2>
 
-          <div className="flex flex-col gap-0" style={{ borderTop: "1px solid #e5e7eb" }}>
-            {recent.map((repo) => (
-              <Link
-                key={repo.name}
-                to={`/p/${repo.name}`}
-                className="flex items-center justify-between no-underline hover:no-underline"
-                style={{ padding: "14px 0", borderBottom: "1px solid #e5e7eb" }}
-              >
-                <div className="min-w-0 flex-1 mr-4">
-                  <span className="font-medium" style={{ fontSize: 15, color: "#0969da" }}>
+          <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+            {featured.map((repo) => (
+              <Link key={repo.name} to={`/p/${repo.name}`} className="group m3-card-interactive flex flex-col gap-3 p-6 no-underline">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-lg font-bold tracking-tight text-on-surface transition-colors group-hover:text-primary">
                     {repo.name}
                   </span>
-                  {repo.description && (
-                    <div style={{ fontSize: 13, color: "#57606a", marginTop: 3, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>
-                      {repo.description}
-                    </div>
-                  )}
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-container px-2.5 py-1 text-[13px] font-semibold tabular-nums text-on-surface-variant">
+                    <Star size={13} className="fill-current" />
+                    {repo.stargazers_count}
+                  </span>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0" style={{ fontSize: 12, color: "#57606a" }}>
+
+                {repo.description && (
+                  <p className="line-clamp-2 text-sm leading-relaxed text-on-surface-variant">{repo.description}</p>
+                )}
+
+                <div className="mt-auto flex items-center gap-3 pt-4 text-xs text-on-surface-variant">
                   {repo.language && (
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: getLanguageColor(repo.language), display: "inline-block" }}
-                      />
+                    <span className="inline-flex items-center gap-1.5 font-medium">
+                      <span className="size-2.5 rounded-full" style={{ backgroundColor: languageColor(repo.language) }} />
                       {repo.language}
                     </span>
                   )}
-                  <span className="flex items-center gap-1">
-                    <Star size={11} /> {repo.stargazers_count}
+                  {repo.license?.spdx_id && repo.license.spdx_id !== "NOASSERTION" && <span>{repo.license.spdx_id}</span>}
+                  <span className="ml-auto inline-flex translate-x-0 items-center gap-0.5 font-semibold text-primary transition-transform duration-300 ease-spring group-hover:translate-x-1">
+                    Read more
+                    <ArrowUpRight size={14} />
                   </span>
                 </div>
               </Link>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* --------------------------- Recent ------------------------------- */}
+      <section className="mt-16">
+        <div className="m3-eyebrow">Activity</div>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 className="text-[28px] font-bold tracking-tight text-on-surface">Recent repositories</h2>
+          <Link to="/repos" className="inline-flex items-center gap-1 rounded-full pb-1 text-sm font-semibold text-primary underline-offset-4 hover:underline">
+            View all
+            <ArrowUpRight size={15} />
+          </Link>
+        </div>
+
+        <div className="mt-4 -mx-4 flex flex-col">
+          {recent.map((repo) => (
+            <Link
+              key={repo.name}
+              to={`/p/${repo.name}`}
+              className="group flex items-center justify-between gap-4 rounded-3xl px-4 py-4 no-underline transition-colors duration-200 hover:bg-surface-container"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-semibold text-on-surface transition-colors group-hover:text-primary">{repo.name}</div>
+                {repo.description && (
+                  <div className="mt-0.5 truncate text-[13px] text-on-surface-variant">{repo.description}</div>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-4 text-xs text-on-surface-variant">
+                {repo.language && (
+                  <span className="hidden items-center gap-1.5 font-medium sm:inline-flex">
+                    <span className="size-2.5 rounded-full" style={{ backgroundColor: languageColor(repo.language) }} />
+                    {repo.language}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1 tabular-nums">
+                  <Star size={12} />
+                  {repo.stargazers_count}
+                </span>
+                <ChevronRight className="transition-transform duration-300 ease-spring group-hover:translate-x-1" size={16} />
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
-
-      {/* Footer */}
-      <footer
-        style={{
-          padding: "28px 40px",
-          borderTop: "1px solid #d0d7de",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          fontSize: 12,
-          color: "#57606a",
-        }}
-      >
-        <span>&copy; 2026 Chidc</span>
-        <span style={{ color: "#d0d7de" }}>|</span>
-        <a href={`https://github.com/${GITHUB_USER}`} target="_blank" rel="noopener noreferrer" style={{ color: "#57606a" }}>GitHub</a>
-        <span style={{ color: "#d0d7de" }}>|</span>
-        <a href="mailto:chidcout@outlook.com" style={{ color: "#57606a" }}>Contact</a>
-      </footer>
-    </>
+    </div>
   );
-}
-
-function getLanguageColor(lang: string): string {
-  const colors: Record<string, string> = {
-    Python: "#3572A5", JavaScript: "#f1e05a", TypeScript: "#3178c6",
-    HTML: "#e34c26", CSS: "#563d7c", Dart: "#00B4AB", Kotlin: "#A97BFF",
-    Rust: "#dea584", Java: "#b07219", "C++": "#f34b7d", Go: "#00ADD8",
-  };
-  return colors[lang] || "#888";
 }

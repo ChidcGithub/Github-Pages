@@ -1,17 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router";
-import { ArrowLeft, ExternalLink, Star, Clock, RefreshCw } from "lucide-react";
-import { fetchRepos, fetchReadme, clearCacheKey } from "@/lib/github-api";
+import {
+  ArrowLeft,
+  Clock,
+  ExternalLink,
+  FileQuestion,
+  RefreshCw,
+  Scale,
+  Star,
+} from "lucide-react";
+import { fetchRepos, fetchReadme, languageColor, clearCacheKey } from "@/lib/github-api";
 import type { GitHubRepo } from "@/lib/github-api";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
-
-const langColors: Record<string, string> = {
-  Python: "#3572A5", JavaScript: "#f1e05a", TypeScript: "#3178c6",
-  HTML: "#e34c26", CSS: "#563d7c", Dart: "#00B4AB", Kotlin: "#A97BFF",
-  Rust: "#dea584", Java: "#b07219", "C++": "#f34b7d", Go: "#00ADD8",
-  PowerShell: "#012456", Shell: "#89e050",
-};
 
 export function ProjectPage() {
   const { name } = useParams<{ name: string }>();
@@ -21,47 +23,50 @@ export function ProjectPage() {
   const [readmeLoading, setReadmeLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadProject = useCallback(async (force = false) => {
-    if (!name) return;
+  const loadProject = useCallback(
+    async (force = false) => {
+      if (!name) return;
 
-    setLoading(true);
-    try {
-      const repos = await fetchRepos(force);
-      const found = repos.find((r) => r.name === name);
-      if (found) {
-        setRepo(found);
-        setReadmeLoading(true);
-        try {
-          const md = await fetchReadme("ChidcGithub", name, force);
-          setReadme(md);
-        } catch (err: unknown) {
-          setReadme(null);
-          const message = err instanceof Error ? err.message : "";
-          const status = message.match(/(\d{3})/)?.[1];
-          if (status === "403") {
-            toast.warning("Failed to load README: access denied (403)", {
-              description: "This repository may be private or rate-limited.",
-              duration: 5000,
-            });
-          } else if (status === "404") {
-            // 404 means no README, not an error
-          } else {
-            toast.warning("Failed to load README", {
-              description: message || "An unexpected error occurred.",
-              duration: 5000,
-            });
+      setLoading(true);
+      try {
+        const repos = await fetchRepos(force);
+        const found = repos.find((r) => r.name === name);
+        if (found) {
+          setRepo(found);
+          setReadmeLoading(true);
+          try {
+            const md = await fetchReadme("ChidcGithub", name, force, found.default_branch);
+            setReadme(md);
+          } catch (err: unknown) {
+            setReadme(null);
+            const message = err instanceof Error ? err.message : "";
+            const status = message.match(/(\d{3})/)?.[1];
+            if (status === "403") {
+              toast.warning("Failed to load README: access denied (403)", {
+                description: "This repository may be private or rate-limited.",
+                duration: 5000,
+              });
+            } else if (status === "404") {
+              // 404 means no README, not an error
+            } else {
+              toast.warning("Failed to load README", {
+                description: message || "An unexpected error occurred.",
+                duration: 5000,
+              });
+            }
+          } finally {
+            setReadmeLoading(false);
           }
-        } finally {
-          setReadmeLoading(false);
         }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [name]);
+    },
+    [name]
+  );
 
   useEffect(() => {
     loadProject();
@@ -76,100 +81,93 @@ export function ProjectPage() {
   };
 
   if (loading) {
-    return <div style={{ padding: "64px 32px", textAlign: "center", color: "#57606a" }}>Loading project...</div>;
-  }
-
-  if (!repo) {
     return (
-      <div style={{ padding: "64px 32px", textAlign: "center" }}>
-        <h2 style={{ fontSize: 22, color: "#2d333b", marginBottom: 12 }}>Repository not found</h2>
-        <Link to="/repos" style={{ color: "#0969da", fontSize: 14 }}>&larr; Back to repositories</Link>
+      <div className="flex flex-col items-center justify-center gap-4 py-32 text-on-surface-variant" role="status">
+        <span className="size-12 animate-spin rounded-full border-4 border-primary border-t-transparent" aria-hidden />
+        <span className="text-sm font-medium tracking-wide">Loading project…</span>
       </div>
     );
   }
 
-  // langInfo available via getLanguageInfo(repo) in render
+  if (!repo) {
+    return (
+      <div className="py-32 text-center">
+        <h2 className="text-2xl font-bold tracking-tight text-on-surface">Repository not found</h2>
+        <p className="mt-2 text-sm text-on-surface-variant">It may have been renamed, archived or deleted.</p>
+        <Link to="/repos" className="m3-btn m3-btn-tonal mt-6 no-underline">
+          <ArrowLeft size={16} />
+          Back to repositories
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <>
-      {/* Project header */}
-      <section style={{ padding: "64px 32px 24px" }}>
-        <Link to="/repos" className="inline-flex items-center gap-1 mb-4" style={{ fontSize: 13, color: "#0969da" }}>
-          <ArrowLeft size={14} /> Back to repositories
+    <div>
+      {/* ----------------------------- Header ------------------------------ */}
+      <section className="pt-10 sm:pt-14">
+        <Link
+          to="/repos"
+          className="inline-flex items-center gap-1.5 rounded-full bg-surface-container px-4 py-2 text-[13px] font-medium text-on-surface-variant no-underline transition-colors duration-200 hover:bg-secondary-container hover:text-on-secondary-container"
+        >
+          <ArrowLeft size={15} />
+          All repositories
         </Link>
 
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2 min-w-0">
-            <h1 style={{ fontSize: 32, fontWeight: 300, color: "#57606a", lineHeight: 1.3, margin: 0 }}>
-              {repo.name}
-            </h1>
+        <div className="mt-5 flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+          <h1 className="min-w-0 break-words text-[clamp(28px,5vw,42px)] font-extrabold leading-[1.08] tracking-tight text-on-surface">
+            {repo.name}
+          </h1>
+          <div className="flex shrink-0 items-center gap-2 pt-1.5">
             <button
+              type="button"
               onClick={handleRefresh}
               disabled={refreshing || readmeLoading}
-              style={{
-                background: "none",
-                border: "1px solid #d0d7de",
-                borderRadius: 6,
-                padding: "4px 8px",
-                cursor: refreshing || readmeLoading ? "wait" : "pointer",
-                color: "#57606a",
-                display: "flex",
-                alignItems: "center",
-                flexShrink: 0,
-                opacity: refreshing || readmeLoading ? 0.6 : 1,
-              }}
+              aria-label="Refresh data"
               title="Refresh data"
+              className="m3-icon-btn disabled:cursor-wait disabled:opacity-60"
             >
-              <RefreshCw size={14} className={(refreshing || readmeLoading) ? "animate-spin" : ""} />
+              <RefreshCw size={17} className={refreshing || readmeLoading ? "animate-spin" : ""} />
             </button>
+            <a href={repo.html_url} target="_blank" rel="noopener noreferrer" aria-label="View on GitHub" title="View on GitHub" className="m3-fab no-underline">
+              <ExternalLink size={20} />
+            </a>
           </div>
-          <a
-            href={repo.html_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-shrink-0 no-underline hover:no-underline"
-            style={{ color: "#57606a", padding: "6px" }}
-            title="View on GitHub"
-          >
-            <ExternalLink size={18} />
-          </a>
         </div>
+
         {repo.description && (
-          <p className="mt-2" style={{ fontSize: 15, color: "#57606a", lineHeight: 1.5 }}>
-            {repo.description}
-          </p>
+          <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-on-surface-variant">{repo.description}</p>
         )}
 
-        {/* Stats bar */}
-        <div className="flex flex-wrap items-center gap-4 mt-5" style={{ fontSize: 13, color: "#57606a" }}>
+        {/* Meta chips */}
+        <div className="mt-5 flex flex-wrap items-center gap-2">
           {repo.language && (
-            <span className="flex items-center gap-1.5">
-              <span style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: langColors[repo.language] || "#888", display: "inline-block" }} />
+            <span className="m3-chip-static">
+              <span className="size-2.5 rounded-full" style={{ backgroundColor: languageColor(repo.language) }} />
               {repo.language}
             </span>
           )}
-          <span className="flex items-center gap-1">
-            <Star size={13} /> {repo.stargazers_count} stars
+          <span className="m3-chip-static">
+            <Star size={13} />
+            {repo.stargazers_count} stars
           </span>
           {repo.license?.spdx_id && repo.license.spdx_id !== "NOASSERTION" && (
-            <span>{repo.license.spdx_id} License</span>
+            <span className="m3-chip-static">
+              <Scale size={13} />
+              {repo.license.spdx_id}
+            </span>
           )}
-          <span className="flex items-center gap-1">
-            <Clock size={13} /> Updated {formatDate(repo.updated_at)}
+          <span className="m3-chip-static">
+            <Clock size={13} />
+            Updated {formatDate(repo.updated_at)}
           </span>
         </div>
 
         {/* Topics */}
         {repo.topics.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="mt-3 flex flex-wrap gap-2">
             {repo.topics.map((topic) => (
-              <span
-                key={topic}
-                style={{
-                  fontSize: 12, color: "#0969da", backgroundColor: "#ddf4ff",
-                  padding: "3px 10px", borderRadius: 12,
-                }}
-              >
+              <span key={topic} className="inline-flex h-8 select-none items-center rounded-full bg-primary-container px-4 text-[13px] font-medium text-on-primary-container">
                 {topic}
               </span>
             ))}
@@ -177,43 +175,26 @@ export function ProjectPage() {
         )}
       </section>
 
-      {/* README content */}
-      <section style={{ padding: "0 32px 48px", borderTop: "1px solid #d0d7de" }}>
+      {/* ---------------------------- README ------------------------------- */}
+      <section className="mt-10">
         {readmeLoading ? (
-          <div style={{ padding: "32px 0", textAlign: "center", color: "#57606a" }}>Loading README...</div>
+          <div className="flex items-center justify-center gap-4 rounded-[32px] bg-surface-low py-24 text-on-surface-variant" role="status">
+            <span className="size-9 animate-spin rounded-full border-[3px] border-primary border-t-transparent" aria-hidden />
+            <span className="text-sm font-medium">Loading README…</span>
+          </div>
         ) : readme ? (
-          <div style={{ paddingTop: 24 }}>
+          <div className="rounded-[32px] bg-surface-low p-6 sm:p-10">
             <MarkdownRenderer markdown={readme} />
           </div>
         ) : (
-          <div style={{ padding: "32px 0", textAlign: "center", color: "#57606a" }}>
-            No README available for this repository.
+          <div className="flex flex-col items-center justify-center gap-4 rounded-[32px] bg-surface-low px-8 py-16 text-center">
+            <span className="grid size-14 place-items-center rounded-full bg-surface-high text-on-surface-variant">
+              <FileQuestion size={24} />
+            </span>
+            <div className="text-sm font-medium text-on-surface-variant">No README available for this repository.</div>
           </div>
         )}
       </section>
-
-      {/* Footer */}
-      <footer style={{ padding: "32px", borderTop: "1px solid #d0d7de", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, color: "#57606a" }}>
-        <span>&copy; 2026 Chidc</span>
-        <span style={{ color: "#d0d7de" }}>|</span>
-        <a href="https://github.com/ChidcGithub" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <span style={{ color: "#d0d7de" }}>|</span>
-        <a href="mailto:chidcout@outlook.com">Contact</a>
-      </footer>
-    </>
+    </div>
   );
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "today";
-  if (diffDays === 1) return "yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-  return `${Math.floor(diffDays / 365)} years ago`;
 }

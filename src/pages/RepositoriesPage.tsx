@@ -1,17 +1,46 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router";
-import { Star, Search, SortDesc, RefreshCw } from "lucide-react";
-import { fetchRepos, clearCacheKey } from "@/lib/github-api";
+import type { LucideIcon } from "lucide-react";
+import {
+  ArrowDownAZ,
+  Check,
+  History,
+  Languages,
+  RefreshCw,
+  Search,
+  SearchX,
+  Star,
+  X,
+} from "lucide-react";
+import { fetchRepos, languageColor, clearCacheKey } from "@/lib/github-api";
 import type { GitHubRepo } from "@/lib/github-api";
+import { formatDate } from "@/lib/format";
 
 type SortKey = "updated" | "stars" | "name" | "language";
 
-const langColors: Record<string, string> = {
-  Python: "#3572A5", JavaScript: "#f1e05a", TypeScript: "#3178c6",
-  HTML: "#e34c26", CSS: "#563d7c", Dart: "#00B4AB", Kotlin: "#A97BFF",
-  Rust: "#dea584", Java: "#b07219", "C++": "#f34b7d", Go: "#00ADD8",
-  PowerShell: "#012456", Shell: "#89e050", Lua: "#000080", PHP: "#4F5D95",
-};
+const SORTS: { key: SortKey; label: string; icon: LucideIcon }[] = [
+  { key: "updated", label: "Recently updated", icon: History },
+  { key: "stars", label: "Most stars", icon: Star },
+  { key: "name", label: "Name A–Z", icon: ArrowDownAZ },
+  { key: "language", label: "Language", icon: Languages },
+];
+
+function FilterChip({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={selected} className={`m3-chip ${selected ? "m3-chip-selected" : ""}`}>
+      {selected && <Check size={15} />}
+      {children}
+    </button>
+  );
+}
 
 export function RepositoriesPage() {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
@@ -19,6 +48,7 @@ export function RepositoriesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("updated");
+  const [lang, setLang] = useState<string | null>(null);
 
   const loadData = useCallback(async (force = false) => {
     try {
@@ -43,6 +73,7 @@ export function RepositoriesPage() {
   };
 
   const filtered = repos
+    .filter((r) => (lang ? r.language === lang : true))
     .filter((r) => {
       const q = search.toLowerCase();
       return (
@@ -54,154 +85,166 @@ export function RepositoriesPage() {
     })
     .sort((a, b) => {
       switch (sortBy) {
-        case "stars": return b.stargazers_count - a.stargazers_count;
-        case "name": return a.name.localeCompare(b.name);
-        case "language": return (a.language || "").localeCompare(b.language || "");
-        default: return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        case "stars":
+          return b.stargazers_count - a.stargazers_count;
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "language":
+          return (a.language || "").localeCompare(b.language || "");
+        default:
+          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       }
     });
 
-  const languages = [...new Set(repos.map((r) => r.language).filter(Boolean))].sort();
+  const languages = [...new Set(repos.map((r) => r.language).filter(Boolean))].sort() as string[];
 
   if (loading) {
-    return <div style={{ padding: "64px 32px", textAlign: "center", color: "#57606a" }}>Loading repositories...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-32 text-on-surface-variant" role="status">
+        <span className="size-12 animate-spin rounded-full border-4 border-primary border-t-transparent" aria-hidden />
+        <span className="text-sm font-medium tracking-wide">Loading repositories…</span>
+      </div>
+    );
   }
 
   return (
-    <>
-      <section style={{ padding: "64px 32px 48px" }}>
-        <div className="flex items-center gap-2 mb-4">
-          <h1 style={{ fontSize: 36, fontWeight: 300, color: "#57606a", lineHeight: 1.3, margin: 0 }}>
-            All Repositories
+    <div>
+      {/* ----------------------------- Header ----------------------------- */}
+      <section className="pt-10 sm:pt-14">
+        <div className="m3-eyebrow">Library</div>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-[clamp(32px,6vw,44px)] font-extrabold leading-none tracking-tight text-on-surface">
+            All repositories
           </h1>
+          <span className="grid h-8 min-w-8 place-items-center rounded-full bg-primary-container px-2.5 text-sm font-bold tabular-nums text-on-primary-container">
+            {repos.length}
+          </span>
           <button
+            type="button"
             onClick={handleRefresh}
             disabled={refreshing}
-            style={{
-              background: "none",
-              border: "1px solid #d0d7de",
-              borderRadius: 6,
-              padding: "4px 8px",
-              cursor: refreshing ? "wait" : "pointer",
-              color: "#57606a",
-              display: "flex",
-              alignItems: "center",
-              opacity: refreshing ? 0.6 : 1,
-            }}
+            aria-label="Refresh data"
             title="Refresh data"
+            className="m3-icon-btn ml-auto disabled:cursor-wait disabled:opacity-60"
           >
-            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
           </button>
         </div>
-        <p style={{ fontSize: 16, lineHeight: 1.6, color: "#2d333b", marginBottom: 24 }}>
-          {repos.length} public repositories from <a href={`https://github.com/ChidcGithub`} target="_blank" rel="noopener noreferrer">GitHub</a>.
+        <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-on-surface-variant">
+          Everything public on{" "}
+          <a
+            href="https://github.com/ChidcGithub"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            GitHub
+          </a>
+          , sorted and searchable.
         </p>
+      </section>
 
-        {/* Search + Sort */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <div className="flex items-center gap-2 px-3" style={{
-            height: 36, borderRadius: 6, border: "1px solid #d0d7de", backgroundColor: "#fff", minWidth: 240,
-          }}>
-            <Search size={14} color="#57606a" />
-            <input
-              type="text"
-              placeholder="Search repos..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ border: "none", outline: "none", fontSize: 14, color: "#2d333b", width: "100%", background: "transparent" }}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <SortDesc size={14} color="#57606a" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortKey)}
-              style={{
-                border: "1px solid #d0d7de", borderRadius: 6, padding: "6px 12px",
-                fontSize: 13, color: "#2d333b", backgroundColor: "#fff", cursor: "pointer",
-              }}
-            >
-              <option value="updated">Recently Updated</option>
-              <option value="stars">Most Stars</option>
-              <option value="name">Name A-Z</option>
-              <option value="language">Language</option>
-            </select>
-          </div>
+      {/* ---------------------------- Controls ----------------------------- */}
+      <section className="mt-8">
+        <div className="relative m3-search max-w-xl">
+          <Search size={20} className="shrink-0 text-on-surface-variant" aria-hidden />
+          <input
+            type="text"
+            aria-label="Search repositories"
+            placeholder="Search repositories…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button type="button" onClick={() => setSearch("")} aria-label="Clear search" className="m3-icon-btn size-8 shrink-0">
+              <X size={15} />
+            </button>
+          )}
         </div>
 
-        {/* Language filter */}
+        {/* Sort chips */}
+        <div className="mt-5 flex flex-wrap items-center gap-2" role="group" aria-label="Sort repositories">
+          {SORTS.map(({ key, label, icon: Icon }) => (
+            <FilterChip key={key} selected={sortBy === key} onClick={() => setSortBy(key)}>
+              <Icon size={14} />
+              {label}
+            </FilterChip>
+          ))}
+        </div>
+
+        {/* Language filter chips */}
         {languages.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            <span style={{ fontSize: 12, color: "#57606a", lineHeight: "24px" }}>Languages:</span>
-            {languages.map((lang) => (
-              <span
-                key={lang}
-                className="flex items-center gap-1"
-                style={{
-                  fontSize: 12, color: "#57606a", padding: "3px 10px",
-                  backgroundColor: "#f5f6f8", border: "1px solid #d0d7de",
-                  borderRadius: 12,
-                }}
-              >
-                <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: langColors[lang || ""] || "#888", display: "inline-block" }} />
-                {lang} ({repos.filter((r) => r.language === lang).length})
-              </span>
+          <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Filter by language">
+            {languages.map((language) => (
+              <FilterChip key={language} selected={lang === language} onClick={() => setLang(lang === language ? null : language)}>
+                <span className="size-2.5 rounded-full" style={{ backgroundColor: languageColor(language) }} />
+                {language}
+                <span className="tabular-nums opacity-60">{repos.filter((r) => r.language === language).length}</span>
+              </FilterChip>
             ))}
           </div>
         )}
 
-        {/* Repo list */}
-        <div className="flex flex-col gap-0">
-          {filtered.map((repo) => (
-            <Link
-              key={repo.name}
-              to={`/p/${repo.name}`}
-              className="flex items-center justify-between no-underline hover:no-underline"
-              style={{ padding: "14px 0", borderBottom: "1px solid #e5e7eb" }}
+        {(lang || search) && (
+          <div className="mt-5 text-[13px] font-medium text-on-surface-variant">
+            {filtered.length} result{filtered.length === 1 ? "" : "s"}
+            <button
+              type="button"
+              onClick={() => {
+                setLang(null);
+                setSearch("");
+              }}
+              className="ml-3 rounded-full px-2 py-1 font-semibold text-primary underline-offset-4 hover:underline"
             >
-              <div className="min-w-0 flex-1 mr-4">
-                <span className="font-medium" style={{ fontSize: 15, color: "#0969da" }}>
-                  {repo.name}
-                </span>
-                {repo.description && (
-                  <div style={{ fontSize: 13, color: "#57606a", marginTop: 3 }}>
-                    {repo.description}
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0" style={{ fontSize: 12, color: "#57606a" }}>
-                {repo.language && (
-                  <span className="flex items-center gap-1">
-                    <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: langColors[repo.language] || "#888", display: "inline-block" }} />
-                    {repo.language}
-                  </span>
-                )}
-                <span className="flex items-center gap-1">
-                  <Star size={11} /> {repo.stargazers_count}
-                </span>
-                {repo.license?.spdx_id && repo.license.spdx_id !== "NOASSERTION" && (
-                  <span>{repo.license.spdx_id}</span>
-                )}
-              </div>
-            </Link>
-          ))}
-          {filtered.length === 0 && (
-            <div style={{ padding: "32px 0", textAlign: "center", color: "#57606a", fontSize: 14 }}>
-              No repositories found.
-            </div>
-          )}
-        </div>
+              Reset filters
+            </button>
+          </div>
+        )}
       </section>
 
-      {/* Footer */}
-      <footer style={{ padding: "32px", borderTop: "1px solid #d0d7de", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, color: "#57606a" }}>
-        <span>&copy; 2026 Chidc</span>
-        <span style={{ color: "#d0d7de" }}>|</span>
-        <a href="https://github.com/ChidcGithub" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <span style={{ color: "#d0d7de" }}>|</span>
-        <a href="mailto:chidcout@outlook.com">Contact</a>
-      </footer>
-    </>
+      {/* ------------------------------ Grid ------------------------------- */}
+      <section className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2">
+        {filtered.map((repo) => (
+          <Link key={repo.name} to={`/p/${repo.name}`} className="group m3-card-interactive flex flex-col gap-2.5 p-5 no-underline">
+            <div className="flex items-start justify-between gap-3">
+              <span className="truncate text-[17px] font-bold tracking-tight text-on-surface transition-colors group-hover:text-primary">
+                {repo.name}
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-container px-2.5 py-1 text-xs font-semibold tabular-nums text-on-surface-variant">
+                <Star size={12} className="fill-current" />
+                {repo.stargazers_count}
+              </span>
+            </div>
+
+            {repo.description && (
+              <p className="line-clamp-2 text-[13.5px] leading-relaxed text-on-surface-variant">{repo.description}</p>
+            )}
+
+            <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-3 text-xs text-on-surface-variant">
+              {repo.language && (
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <span className="size-2.5 rounded-full" style={{ backgroundColor: languageColor(repo.language) }} />
+                  {repo.language}
+                </span>
+              )}
+              {repo.license?.spdx_id && repo.license.spdx_id !== "NOASSERTION" && <span>{repo.license.spdx_id}</span>}
+              <span className="ml-auto">Updated {formatDate(repo.updated_at)}</span>
+            </div>
+          </Link>
+        ))}
+
+        {filtered.length === 0 && (
+          <div className="col-span-full m3-card flex flex-col items-center justify-center gap-4 !bg-surface-container px-8 py-16 text-center">
+            <span className="grid size-14 place-items-center rounded-full bg-surface-high text-on-surface-variant">
+              <SearchX size={24} />
+            </span>
+            <div>
+              <div className="text-base font-semibold text-on-surface">No repositories found</div>
+              <div className="mt-1 text-sm text-on-surface-variant">Try different keywords or reset the filters.</div>
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }

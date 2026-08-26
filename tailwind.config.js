@@ -5,59 +5,62 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+        // Material 3 color roles (RGB triplets defined in index.css)
+        primary: "rgb(var(--md-primary) / <alpha-value>)",
+        "on-primary": "rgb(var(--md-on-primary) / <alpha-value>)",
+        "primary-container": "rgb(var(--md-primary-container) / <alpha-value>)",
+        "on-primary-container": "rgb(var(--md-on-primary-container) / <alpha-value>)",
+        secondary: "rgb(var(--md-secondary) / <alpha-value>)",
+        "on-secondary": "rgb(var(--md-on-secondary) / <alpha-value>)",
+        "secondary-container": "rgb(var(--md-secondary-container) / <alpha-value>)",
+        "on-secondary-container": "rgb(var(--md-on-secondary-container) / <alpha-value>)",
+        tertiary: "rgb(var(--md-tertiary) / <alpha-value>)",
+        "on-tertiary": "rgb(var(--md-on-tertiary) / <alpha-value>)",
+        "tertiary-container": "rgb(var(--md-tertiary-container) / <alpha-value>)",
+        "on-tertiary-container": "rgb(var(--md-on-tertiary-container) / <alpha-value>)",
+        error: "rgb(var(--md-error) / <alpha-value>)",
+        "error-container": "rgb(var(--md-error-container) / <alpha-value>)",
+        "on-error-container": "rgb(var(--md-on-error-container) / <alpha-value>)",
+        surface: {
+          DEFAULT: "rgb(var(--md-surface) / <alpha-value>)",
+          dim: "rgb(var(--md-surface-dim) / <alpha-value>)",
+          low: "rgb(var(--md-surface-low) / <alpha-value>)",
+          container: "rgb(var(--md-surface-container) / <alpha-value>)",
+          high: "rgb(var(--md-surface-high) / <alpha-value>)",
+          highest: "rgb(var(--md-surface-highest) / <alpha-value>)",
         },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+        "on-surface": "rgb(var(--md-on-surface) / <alpha-value>)",
+        "on-surface-variant": "rgb(var(--md-on-surface-variant) / <alpha-value>)",
+        outline: {
+          DEFAULT: "rgb(var(--md-outline) / <alpha-value>)",
+          variant: "rgb(var(--md-outline-variant) / <alpha-value>)",
         },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive) / <alpha-value>)",
-          foreground: "hsl(var(--destructive-foreground) / <alpha-value>)",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
-        },
+        "inverse-surface": "rgb(var(--md-inverse-surface) / <alpha-value>)",
+        "inverse-on-surface": "rgb(var(--md-inverse-on-surface) / <alpha-value>)",
+        // Legacy aliases (kept for shadcn/ui components)
+        background: "rgb(var(--md-surface) / <alpha-value>)",
+        foreground: "rgb(var(--md-on-surface) / <alpha-value>)",
+        border: "rgb(var(--md-outline-variant) / <alpha-value>)",
+        input: "rgb(var(--md-outline-variant) / <alpha-value>)",
+        ring: "rgb(var(--md-primary) / <alpha-value>)",
+        muted: { DEFAULT: "rgb(var(--md-surface-container) / <alpha-value>)", foreground: "rgb(var(--md-on-surface-variant) / <alpha-value>)" },
+        accent: { DEFAULT: "rgb(var(--md-secondary-container) / <alpha-value>)", foreground: "rgb(var(--md-on-secondary-container) / <alpha-value>)" },
       },
-      borderRadius: {
-        xl: "calc(var(--radius) + 4px)",
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-        xs: "calc(var(--radius) - 6px)",
+      fontFamily: {
+        sans: ['"Roboto Flex"', 'Roboto', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', '"Noto Sans"', 'sans-serif'],
+        mono: ['"Roboto Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+      },
+      // M3 Expressive motion: standard + emphasized + spring (overshoot)
+      transitionTimingFunction: {
+        standard: 'cubic-bezier(0.2, 0, 0, 1)',
+        emphasized: 'cubic-bezier(0.05, 0.7, 0.1, 1)',
+        spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        e1: "0 1px 2px 0 rgb(0 0 0 / 0.30), 0 1px 3px 1px rgb(0 0 0 / 0.15)",
+        e2: "0 1px 2px 0 rgb(0 0 0 / 0.30), 0 2px 6px 2px rgb(0 0 0 / 0.15)",
+        e3: "0 4px 8px 3px rgb(0 0 0 / 0.15), 0 1px 3px 0 rgb(0 0 0 / 0.30)",
       },
       keyframes: {
         "accordion-down": {
@@ -68,15 +71,10 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "caret-blink": {
-          "0%,70%,100%": { opacity: "1" },
-          "20%,50%": { opacity: "0" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "caret-blink": "caret-blink 1.25s ease-out infinite",
       },
     },
   },

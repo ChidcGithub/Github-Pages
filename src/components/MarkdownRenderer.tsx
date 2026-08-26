@@ -1,199 +1,107 @@
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 
-const MARKDOWN_STYLES: React.CSSProperties = {
-  fontSize: 15,
-  lineHeight: 1.6,
-  color: "#2d333b",
-};
+const components: Components = {
+  h1: ({ children }) => (
+    <h1 className="mb-4 mt-10 text-[30px] font-bold leading-tight tracking-tight text-on-surface first:mt-0">
+      {children}
+    </h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="mb-3 mt-9 border-b border-outline-variant/40 pb-2 text-[24px] font-bold leading-snug tracking-tight text-on-surface first:mt-0">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mb-2 mt-7 text-xl font-semibold leading-snug text-on-surface first:mt-0">{children}</h3>
+  ),
+  h4: ({ children }) => (
+    <h4 className="mb-2 mt-6 text-lg font-semibold leading-snug text-on-surface first:mt-0">{children}</h4>
+  ),
+  h5: ({ children }) => (
+    <h5 className="mb-1.5 mt-5 text-base font-semibold text-on-surface first:mt-0">{children}</h5>
+  ),
+  h6: ({ children }) => (
+    <h6 className="mb-1.5 mt-5 text-sm font-semibold uppercase tracking-wide text-on-surface-variant first:mt-0">
+      {children}
+    </h6>
+  ),
 
-const HEADING_STYLES: Record<string, React.CSSProperties> = {
-  h1: { fontSize: 28, fontWeight: 400, color: "#2d333b", lineHeight: 1.3, marginTop: 40, marginBottom: 16 },
-  h2: { fontSize: 22, fontWeight: 600, color: "#2d333b", lineHeight: 1.3, marginTop: 32, marginBottom: 12 },
-  h3: { fontSize: 18, fontWeight: 600, color: "#2d333b", lineHeight: 1.4, marginTop: 24, marginBottom: 8 },
-  h4: { fontSize: 16, fontWeight: 600, color: "#2d333b", lineHeight: 1.4, marginTop: 24, marginBottom: 8 },
-  h5: { fontSize: 14, fontWeight: 600, color: "#2d333b", lineHeight: 1.4, marginTop: 16, marginBottom: 8 },
-  h6: { fontSize: 13, fontWeight: 600, color: "#2d333b", lineHeight: 1.4, marginTop: 16, marginBottom: 8 },
+  p: ({ children }) => <p className="my-4 text-[15px] leading-[1.75] text-on-surface/90 first:mt-0 last:mb-0">{children}</p>,
+
+  a: ({ href, children }) => (
+    <a
+      href={href}
+      target={href?.startsWith("http") ? "_blank" : undefined}
+      rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
+      className="break-words font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
+    >
+      {children}
+    </a>
+  ),
+
+  img: ({ src, alt }) => (
+    <span className="my-5 block overflow-hidden rounded-2xl shadow-xs">
+      <img src={typeof src === "string" ? src : undefined} alt={alt ?? ""} loading="lazy" className="max-w-full" />
+    </span>
+  ),
+
+  code: ({ className, children }) => {
+    const match = /language-(\w+)/.exec(className || "");
+    const isInline = !match && !String(children).includes("\n");
+    return isInline ? (
+      <code className="rounded-lg bg-tertiary-container/70 px-1.5 py-0.5 font-mono text-[13px] text-on-tertiary-container">
+        {children}
+      </code>
+    ) : (
+      <code className="block overflow-x-auto bg-transparent p-0 font-mono text-[13.5px] leading-relaxed text-inherit">
+        {children}
+      </code>
+    );
+  },
+  pre: ({ children }) => (
+    <pre className="my-5 overflow-x-auto rounded-2xl bg-surface-highest p-5 text-on-surface/95">{children}</pre>
+  ),
+
+  table: ({ children }) => (
+    <div className="my-5 overflow-x-auto rounded-2xl border border-outline-variant/50">
+      <table>{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => <thead className="bg-surface-container-high">{children}</thead>,
+  th: ({ children }) => (
+    <th className="whitespace-nowrap px-4 py-3 text-left text-[13px] font-bold uppercase tracking-wide text-on-surface">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="border-t border-outline-variant/40 px-4 py-2.5 align-top text-sm leading-relaxed text-on-surface/90">
+      {children}
+    </td>
+  ),
+
+  blockquote: ({ children }) => (
+    <blockquote className="my-5 rounded-2xl bg-secondary-container/60 px-5 py-4 [&>p]:my-2 [&>p:first-child]:mt-0 [&>p:last-child]:mb-0">
+      {children}
+    </blockquote>
+  ),
+
+  ul: ({ children }) => <ul className="my-4 list-disc space-y-1.5 pl-6 marker:text-primary">{children}</ul>,
+  ol: ({ children }) => <ol className="my-4 list-decimal space-y-1.5 pl-6 marker:font-semibold marker:text-primary">{children}</ol>,
+  li: ({ children }) => <li className="text-[15px] leading-relaxed text-on-surface/90">{children}</li>,
+
+  input: (props) => <input {...props} className="mr-2 size-4 shrink-0 align-middle accent-[rgb(var(--md-primary))]" />,
+
+  hr: () => <hr className="my-8 border-0 h-px bg-outline-variant/60" />,
+
+  del: ({ children }) => <del className="opacity-70">{children}</del>,
 };
 
 export function MarkdownRenderer({ markdown }: { markdown: string }) {
   return (
-    <div style={MARKDOWN_STYLES}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-        components={{
-          // Headings
-          h1: ({ children, ...props }) => (
-            <h1 {...props} style={HEADING_STYLES.h1}>{children}</h1>
-          ),
-          h2: ({ children, ...props }) => (
-            <h2 {...props} style={HEADING_STYLES.h2}>{children}</h2>
-          ),
-          h3: ({ children, ...props }) => (
-            <h3 {...props} style={HEADING_STYLES.h3}>{children}</h3>
-          ),
-          h4: ({ children, ...props }) => (
-            <h4 {...props} style={HEADING_STYLES.h4}>{children}</h4>
-          ),
-          h5: ({ children, ...props }) => (
-            <h5 {...props} style={HEADING_STYLES.h5}>{children}</h5>
-          ),
-          h6: ({ children, ...props }) => (
-            <h6 {...props} style={HEADING_STYLES.h6}>{children}</h6>
-          ),
-
-          // Paragraphs
-          p: ({ children }) => (
-            <p style={{ margin: "12px 0", fontSize: 15, lineHeight: 1.6, color: "#2d333b" }}>
-              {children}
-            </p>
-          ),
-
-          // Links
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              target={href?.startsWith("http") ? "_blank" : undefined}
-              rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
-              style={{ color: "#0969da", textDecoration: "none" }}
-              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-            >
-              {children}
-            </a>
-          ),
-
-          // Images
-          img: ({ src, alt }) => (
-            <img
-              src={src}
-              alt={alt}
-              style={{ maxWidth: "100%", borderRadius: 6, margin: "12px 0" }}
-            />
-          ),
-
-          // Code blocks
-          code: ({ className, children, ...props }) => {
-            const match = /language-(\w+)/.exec(className || "");
-            const isInline = !match && !String(children).includes("\n");
-            return isInline ? (
-              <code
-                {...props}
-                style={{
-                  backgroundColor: "#f6f8fa",
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                  fontSize: 13,
-                  fontFamily: "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace",
-                }}
-              >
-                {children}
-              </code>
-            ) : (
-              <code
-                {...props}
-                style={{
-                  fontFamily: "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace",
-                  fontSize: 13,
-                  lineHeight: 1.7,
-                }}
-              >
-                {children}
-              </code>
-            );
-          },
-          pre: ({ children }) => (
-            <pre
-              style={{
-                backgroundColor: "#f6f8fa",
-                padding: "16px 20px",
-                borderRadius: 6,
-                overflow: "auto",
-                margin: "16px 0",
-              }}
-            >
-              {children}
-            </pre>
-          ),
-
-          // Tables
-          table: ({ children }) => (
-            <div style={{ overflowX: "auto", margin: "16px 0" }}>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: 14,
-                }}
-              >
-                {children}
-              </table>
-            </div>
-          ),
-          th: ({ children }) => (
-            <th
-              style={{
-                padding: "8px 12px",
-                textAlign: "left",
-                fontWeight: 600,
-                color: "#2d333b",
-                borderBottom: "2px solid #d0d7de",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {children}
-            </th>
-          ),
-          td: ({ children }) => (
-            <td
-              style={{
-                padding: "8px 12px",
-                color: "#2d333b",
-                lineHeight: 1.5,
-                borderBottom: "1px solid #e5e7eb",
-              }}
-            >
-              {children}
-            </td>
-          ),
-
-          // Blockquotes
-          blockquote: ({ children }) => (
-            <blockquote
-              style={{
-                borderLeft: "3px solid #0969da",
-                backgroundColor: "#f6f8fa",
-                padding: "12px 16px",
-                borderRadius: "0 6px 6px 0",
-                margin: "16px 0",
-                color: "#2d333b",
-              }}
-            >
-              {children}
-            </blockquote>
-          ),
-
-          // Lists
-          ul: ({ children }) => (
-            <ul style={{ paddingLeft: 24, margin: "12px 0" }}>{children}</ul>
-          ),
-          ol: ({ children }) => (
-            <ol style={{ paddingLeft: 24, margin: "12px 0" }}>{children}</ol>
-          ),
-          li: ({ children }) => (
-            <li style={{ marginBottom: 4, fontSize: 15, lineHeight: 1.6, color: "#2d333b" }}>
-              {children}
-            </li>
-          ),
-
-          // Horizontal rule
-          hr: () => (
-            <hr style={{ border: "none", borderTop: "1px solid #d0d7de", margin: "24px 0" }} />
-          ),
-        }}
-      >
+    <div className="text-[15px] leading-relaxed text-on-surface">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={components}>
         {markdown}
       </ReactMarkdown>
     </div>

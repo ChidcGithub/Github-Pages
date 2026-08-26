@@ -2,66 +2,393 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------ */
+/* Material 3 Expressive — color roles (RGB triplets for alpha use)   */
+/*                                                                    */
+/* NOTE: these static palettes are the pre-hydration fallback.        */
+/* At runtime src/lib/dynamic-theme.ts regenerates them every minute  */
+/* from the current time × season seed and writes them inline on      */
+/* <html>, so the UI tint follows the clock and the calendar.         */
+/* ------------------------------------------------------------------ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 210 11% 22%;
-    --card: 0 0% 100%;
-    --card-foreground: 210 11% 22%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 11% 22%;
-    --primary: 213 90% 45%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 210 11% 22%;
-    --muted: 210 20% 96%;
-    --muted-foreground: 212 9% 38%;
-    --accent: 210 20% 96%;
-    --accent-foreground: 210 11% 22%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 210 18% 85%;
-    --input: 210 18% 85%;
-    --ring: 213 90% 45%;
-    --radius: 0.5rem;
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* M3 baseline light scheme (purple seed) */
+    --md-primary: 103 80 164; /* #6750A4 */
+    --md-on-primary: 255 255 255;
+    --md-primary-container: 234 221 255; /* #EADDFF */
+    --md-on-primary-container: 33 0 93; /* #21005D */
+    --md-secondary: 98 91 113; /* #625B71 */
+    --md-on-secondary: 255 255 255;
+    --md-secondary-container: 232 222 248; /* #E8DEF8 */
+    --md-on-secondary-container: 29 25 43; /* #1D192B */
+    --md-tertiary: 125 82 96; /* #7D5260 */
+    --md-on-tertiary: 255 255 255;
+    --md-tertiary-container: 255 216 228; /* #FFD8E4 */
+    --md-on-tertiary-container: 49 17 29; /* #31111D */
+    --md-error: 176 32 32;
+    --md-error-container: 249 222 220;
+    --md-on-error-container: 65 14 11;
+    --md-surface: 254 247 255; /* #FEF7FF */
+    --md-surface-dim: 222 216 225;
+    --md-surface-low: 247 242 250; /* #F7F2FA */
+    --md-surface-container: 243 237 247; /* #F3EDF7 */
+    --md-surface-high: 236 230 240; /* #ECE6F0 */
+    --md-surface-highest: 230 224 233; /* #E6E0E9 */
+    --md-on-surface: 29 27 32; /* #1D1B20 */
+    --md-on-surface-variant: 73 69 79; /* #49454F */
+    --md-outline: 121 116 126; /* #79747E */
+    --md-outline-variant: 202 196 208; /* #CAC4D0 */
+    --md-inverse-surface: 50 47 55;
+    --md-inverse-on-surface: 245 239 247;
+  }
+
+  .dark {
+    /* M3 baseline dark scheme */
+    --md-primary: 208 188 255; /* #D0BCFF */
+    --md-on-primary: 56 30 114; /* #381E72 */
+    --md-primary-container: 79 55 139; /* #4F378B */
+    --md-on-primary-container: 234 221 255; /* #EADDFF */
+    --md-secondary: 204 194 220; /* #CCC2DC */
+    --md-on-secondary: 51 45 65; /* #332D41 */
+    --md-secondary-container: 74 68 88; /* #4A4458 */
+    --md-on-secondary-container: 232 222 248; /* #E8DEF8 */
+    --md-tertiary: 239 184 200; /* #EFB8C8 */
+    --md-on-tertiary: 73 37 50; /* #492532 */
+    --md-tertiary-container: 99 59 72; /* #633B48 */
+    --md-on-tertiary-container: 255 216 228; /* #FFD8E4 */
+    --md-error: 242 184 181;
+    --md-error-container: 140 29 24;
+    --md-on-error-container: 249 222 220;
+    --md-surface: 20 18 24; /* #141218 */
+    --md-surface-dim: 20 18 24;
+    --md-surface-low: 29 27 32; /* #1D1B20 */
+    --md-surface-container: 33 31 38; /* #211F26 */
+    --md-surface-high: 43 41 48; /* #2B2930 */
+    --md-surface-highest: 54 52 59; /* #36343B */
+    --md-on-surface: 230 224 233; /* #E6E0E9 */
+    --md-on-surface-variant: 202 196 208; /* #CAC4D0 */
+    --md-outline: 147 143 153; /* #938F99 */
+    --md-outline-variant: 73 69 79; /* #49454F */
+    --md-inverse-surface: 230 224 233;
+    --md-inverse-on-surface: 50 47 55;
   }
 
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-    color: #2d333b;
-    background: #ffffff;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-size: 16px;
-    line-height: 1.6;
+    @apply bg-surface font-sans text-on-surface antialiased;
+    overflow-x: hidden;
+    transition: background-color 0.3s var(--ease-standard), color 0.3s var(--ease-standard);
   }
 
-  code {
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: 0.85em;
-    background: #f6f8fa;
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: #24292f;
+  ::selection {
+    background-color: rgb(var(--md-primary-container));
+    color: rgb(var(--md-on-primary-container));
   }
 
-  pre code {
-    padding: 0;
+  :focus-visible {
+    outline: 3px solid rgb(var(--md-primary) / 0.55);
+    outline-offset: 2px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--md-outline-variant)) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
     background: transparent;
-    font-size: 13px;
-    line-height: 1.7;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--md-outline-variant));
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
   }
 
-  a {
-    color: #0969da;
-    text-decoration: none;
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* M3 Expressive components                                           */
+/* ------------------------------------------------------------------ */
+
+@layer components {
+  /* ----- Buttons (pill → morphs squarer on press) ------------------ */
+
+  .m3-btn {
+    @apply relative inline-flex cursor-pointer select-none items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-full px-6 text-sm font-medium tracking-[0.01em];
+    min-height: 40px;
+    isolation: isolate;
+    transition:
+      border-radius 0.3s var(--ease-spring),
+      transform 0.3s var(--ease-spring),
+      box-shadow 0.2s var(--ease-standard),
+      background-color 0.2s var(--ease-standard),
+      color 0.2s var(--ease-standard);
+  }
+  .m3-btn::after,
+  .m3-icon-btn::after,
+  .m3-chip::after,
+  .m3-nav-item::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--state-color, transparent);
+    opacity: 0;
+    transition: opacity 0.15s linear;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .m3-btn:hover::after,
+  .m3-icon-btn:hover::after,
+  .m3-chip:hover::after,
+  .m3-nav-item:hover::after {
+    opacity: 0.08;
+  }
+  .m3-btn:focus-visible::after,
+  .m3-icon-btn:focus-visible::after,
+  .m3-chip:focus-visible::after,
+  .m3-nav-item:focus-visible::after {
+    opacity: 0.12;
+  }
+  .m3-btn:active::after,
+  .m3-icon-btn:active::after,
+  .m3-chip:active::after,
+  .m3-nav-item:active::after {
+    opacity: 0.1;
+  }
+  .m3-btn:active {
+    border-radius: 14px; /* shape-morph on press */
+    transform: scale(0.97);
   }
 
-  a:hover {
-    text-decoration: underline;
+  .m3-btn-filled {
+    @apply bg-primary text-on-primary shadow-none hover:shadow-e1;
+    --state-color: rgb(var(--md-on-primary));
+  }
+  .m3-btn-tonal {
+    @apply bg-secondary-container text-on-secondary-container;
+    --state-color: rgb(var(--md-on-secondary-container));
+  }
+  .m3-btn-outlined {
+    @apply border border-outline bg-transparent text-primary;
+    --state-color: rgb(var(--md-primary));
+  }
+  .m3-btn-text {
+    @apply bg-transparent px-4 text-primary;
+    --state-color: rgb(var(--md-primary));
+  }
+  .m3-btn-lg {
+    @apply px-7 text-base;
+    min-height: 48px;
+  }
+
+  /* ----- Icon buttons ---------------------------------------------- */
+
+  .m3-icon-btn {
+    @apply relative grid size-10 cursor-pointer place-items-center overflow-hidden rounded-full text-on-surface-variant transition-colors duration-200 hover:text-on-surface;
+    isolation: isolate;
+    --state-color: rgb(var(--md-on-surface));
+    transition-property: color, border-radius, transform, background-color;
+    transition-timing-function: var(--ease-spring);
+    transition-duration: 0.3s;
+  }
+  .m3-icon-btn:active {
+    border-radius: 10px; /* morph */
+    transform: scale(0.92);
+  }
+  .m3-icon-btn-tonal {
+    @apply bg-secondary-container text-on-secondary-container hover:text-on-secondary-container;
+    --state-color: rgb(var(--md-on-secondary-container));
+  }
+
+  /* ----- FAB (mini) ------------------------------------------------- */
+
+  .m3-fab {
+    @apply relative grid size-12 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-2xl bg-primary-container text-on-primary-container shadow-e1;
+    isolation: isolate;
+    --state-color: rgb(var(--md-on-primary-container));
+    transition:
+      border-radius 0.3s var(--ease-spring),
+      transform 0.3s var(--ease-spring),
+      box-shadow 0.2s var(--ease-standard);
+  }
+  .m3-fab::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--state-color);
+    opacity: 0;
+    transition: opacity 0.15s linear;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .m3-fab:hover::after {
+    opacity: 0.08;
+  }
+  .m3-fab:hover {
+    box-shadow: theme(boxShadow.e2);
+  }
+  .m3-fab:active {
+    border-radius: 16px;
+    transform: scale(0.94);
+  }
+
+  /* ----- Chips ------------------------------------------------------ */
+
+  .m3-chip {
+    @apply relative inline-flex h-8 cursor-pointer select-none items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-full border border-outline-variant px-4 text-[13px] font-medium text-on-surface-variant;
+    isolation: isolate;
+    --state-color: rgb(var(--md-on-surface));
+    transition:
+      border-radius 0.3s var(--ease-spring),
+      transform 0.3s var(--ease-spring),
+      background-color 0.2s var(--ease-standard),
+      border-color 0.2s var(--ease-standard),
+      color 0.2s var(--ease-standard);
+  }
+  .m3-chip:active {
+    border-radius: 8px;
+    transform: scale(0.96);
+  }
+  .m3-chip-selected {
+    @apply border-transparent bg-secondary-container text-on-secondary-container;
+    --state-color: rgb(var(--md-on-secondary-container));
+  }
+  .m3-chip-static {
+    @apply pointer-events-auto inline-flex h-8 select-none items-center gap-1.5 whitespace-nowrap rounded-full border border-outline-variant px-3.5 text-[13px] text-on-surface-variant;
+  }
+
+  /* ----- Cards ------------------------------------------------------ */
+
+  .m3-card {
+    @apply rounded-[28px] bg-surface-low;
+  }
+  .m3-card-interactive {
+    @apply m3-card cursor-pointer;
+    transition:
+      transform 0.35s var(--ease-spring),
+      box-shadow 0.25s var(--ease-standard),
+      background-color 0.25s var(--ease-standard);
+  }
+  .m3-card-interactive:hover {
+    transform: translateY(-3px);
+    box-shadow: theme(boxShadow.e2);
+  }
+  .m3-card-interactive:active {
+    transform: translateY(-1px) scale(0.99);
+  }
+
+  /* ----- Navigation items (drawer / bar) ---------------------------- */
+
+  .m3-nav-item {
+    @apply relative flex h-14 cursor-pointer select-none items-center gap-4 overflow-hidden rounded-full px-4 text-sm font-medium text-on-surface-variant no-underline;
+    isolation: isolate;
+    width: 100%;
+    --state-color: rgb(var(--md-on-surface));
+    transition: background-color 0.25s var(--ease-standard), color 0.25s var(--ease-standard);
+  }
+  .m3-nav-item-active {
+    @apply bg-secondary-container text-on-secondary-container;
+    --state-color: rgb(var(--md-on-secondary-container));
+  }
+  .m3-nav-link {
+    @apply relative inline-flex h-9 select-none items-center overflow-hidden whitespace-nowrap rounded-full px-4 text-sm font-medium no-underline transition-colors duration-200;
+    isolation: isolate;
+    --state-color: rgb(var(--md-on-surface));
+    color: rgb(var(--md-on-surface-variant));
+    transition-property: color, background-color, border-radius, transform;
+    transition-timing-function: var(--ease-spring);
+    transition-duration: 0.3s;
+  }
+  .m3-nav-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--state-color);
+    opacity: 0;
+    transition: opacity 0.15s linear;
+    z-index: -1;
+  }
+  .m3-nav-link:hover {
+    color: rgb(var(--md-on-surface));
+  }
+  .m3-nav-link:hover::after {
+    opacity: 0.08;
+  }
+  .m3-nav-link-active {
+    @apply bg-secondary-container text-on-secondary-container;
+    --state-color: rgb(var(--md-on-secondary-container));
+  }
+
+  /* ----- Search bar -------------------------------------------------- */
+
+  .m3-search {
+    @apply flex h-14 w-full items-center gap-3 rounded-full bg-surface-high px-5 transition-shadow duration-200 focus-within:shadow-e1;
+  }
+  .m3-search input {
+    /* 16px+ prevents iOS Safari from zooming in on focus */
+    @apply h-full w-full flex-1 border-0 bg-transparent text-base text-on-surface outline-none placeholder:text-on-surface-variant;
+  }
+
+  /* ----- Section eyebrow --------------------------------------------- */
+
+  .m3-eyebrow {
+    @apply mb-1.5 text-xs font-bold uppercase tracking-[0.12em] text-primary;
+  }
+}
+
+/* Markdown body helpers that are awkward as utilities alone */
+.m3-md table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* ------------------------------------------------------------------ */
+/* Touch adaptation — larger targets on coarse pointers (M3 ≥48dp)     */
+/* ------------------------------------------------------------------ */
+
+@media (pointer: coarse) {
+  .m3-btn {
+    min-height: 44px;
+  }
+  .m3-chip {
+    height: 40px;
+  }
+  .m3-icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .m3-nav-link {
+    min-width: 44px;
+    height: 44px;
+  }
+  .m3-fab {
+    width: 52px;
+    height: 52px;
   }
 }

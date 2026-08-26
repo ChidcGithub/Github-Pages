@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
-import { useLocation } from "react-router";
+import { useEffect, useState } from "react";
+import { ArrowUpRight, FolderGit2, Github, Home, Mail, X } from "lucide-react";
+import { useLocation, Link } from "react-router";
 
 interface NavItem {
   label: string;
   path: string;
+  icon: React.ComponentType<{ size?: number | string; className?: string }>;
   external?: boolean;
 }
 
@@ -12,15 +13,15 @@ const navGroups: { title: string; items: NavItem[] }[] = [
   {
     title: "Navigation",
     items: [
-      { label: "Home", path: "/" },
-      { label: "Repositories", path: "/repos" },
+      { label: "Home", path: "/", icon: Home },
+      { label: "Repositories", path: "/repos", icon: FolderGit2 },
     ],
   },
   {
     title: "Connect",
     items: [
-      { label: "GitHub Profile", path: "https://github.com/ChidcGithub", external: true },
-      { label: "Email", path: "mailto:chidcout@outlook.com", external: true },
+      { label: "GitHub Profile", path: "https://github.com/ChidcGithub", icon: Github, external: true },
+      { label: "Email", path: "mailto:chidcout@outlook.com", icon: Mail, external: true },
     ],
   },
 ];
@@ -29,108 +30,105 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
+  useEffect(() => {
+    const handler = () => setMobileOpen((open) => !open);
+    window.addEventListener("chidc:toggle-sidebar", handler);
+    return () => window.removeEventListener("chidc:toggle-sidebar", handler);
+  }, []);
+
+  const isActive = (item: NavItem) =>
+    !item.external &&
+    (item.path === "/"
+      ? location.pathname === "/" || location.pathname.startsWith("/p/")
+      : location.pathname.startsWith(item.path));
+
   const sidebarContent = (
-    <nav className="flex flex-col" style={{ padding: "16px 0" }}>
+    <nav
+      className="flex h-full flex-col px-4"
+      style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}
+      aria-label="Sidebar"
+    >
       {navGroups.map((group) => (
-        <div key={group.title} className="mb-4">
-          <div
-            className="font-medium px-5 mb-1"
-            style={{ fontSize: 13, color: "#2d333b" }}
-          >
+        <div key={group.title} className="mb-6 mt-4">
+          <div className="mb-2 px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-on-surface-variant">
             {group.title}
           </div>
-          {group.items.map((item) => {
-            const isActive = !item.external && location.pathname === item.path;
-            // Check if current path is a project page (starts with /p/)
-            const isProjectPage = location.pathname.startsWith("/p/");
-            const isHomeActive = item.path === "/" && (location.pathname === "/" || isProjectPage);
-            const isReposActive = item.path === "/repos" && (location.pathname === "/repos" || isProjectPage);
-
-            let active = isActive;
-            if (item.path === "/" && isHomeActive) active = true;
-            if (item.path === "/repos" && isReposActive) active = true;
-
-            return (
-              <a
-                key={item.label}
-                href={item.path}
-                target={item.external ? "_blank" : undefined}
-                rel={item.external ? "noopener noreferrer" : undefined}
-                className="block transition-colors no-underline hover:no-underline"
-                style={{
-                  padding: "5px 20px",
-                  fontSize: 14,
-                  color: active ? "#0969da" : "#2d333b",
-                  backgroundColor: "transparent",
-                  fontWeight: active ? 600 : 400,
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.color = "#0969da";
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.color = "#2d333b";
-                }}
-              >
-                {item.label}
-              </a>
-            );
-          })}
+          <div className="flex flex-col gap-1">
+            {group.items.map((item) => {
+              const active = isActive(item);
+              const Icon = item.icon;
+              return item.external ? (
+                <a
+                  key={item.label}
+                  href={item.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="m3-nav-item"
+                >
+                  <Icon size={20} />
+                  <span className="flex-1">{item.label}</span>
+                  <ArrowUpRight size={16} className="opacity-60" />
+                </a>
+              ) : (
+                <Link
+                  key={item.label}
+                  to={item.path}
+                  onClick={() => setMobileOpen(false)}
+                  className={`m3-nav-item ${active ? "m3-nav-item-active" : ""}`}
+                >
+                  <Icon size={20} />
+                  <span className="flex-1">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       ))}
+
+      {/* Decorative footer card */}
+      <div className="mt-auto rounded-[24px] bg-primary-container p-5 text-on-primary-container">
+        <div className="text-sm font-bold">Open Source</div>
+        <p className="mt-1 text-xs leading-relaxed opacity-80">
+          All data is fetched live from the GitHub REST API.
+        </p>
+        <a
+          href="https://github.com/ChidcGithub"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex items-center gap-1 rounded-full bg-surface/25 px-3 py-1.5 text-xs font-semibold no-underline transition-colors hover:bg-surface/40"
+        >
+          <Github size={13} />
+          Follow on GitHub
+        </a>
+      </div>
     </nav>
   );
 
   return (
     <>
-      {/* Mobile toggle */}
-      <button
-        className="fixed z-50 lg:hidden flex items-center justify-center rounded"
-        style={{
-          top: 8,
-          left: 8,
-          width: 32,
-          height: 32,
-          backgroundColor: "rgba(92,107,115,0.9)",
-        }}
-        onClick={() => setMobileOpen(!mobileOpen)}
-      >
-        {mobileOpen ? <X size={16} color="#fff" /> : <Menu size={16} color="#fff" />}
-      </button>
-
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 lg:hidden"
-          style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileOpen(false)}
+          aria-hidden
         />
       )}
 
       {/* Mobile drawer */}
       <aside
-        className="fixed top-0 bottom-0 left-0 z-40 lg:hidden overflow-y-auto"
-        style={{
-          width: 260,
-          backgroundColor: "#f7f7f7",
-          borderRight: "1px solid #d0d7de",
-          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
-          transition: "transform 0.2s ease",
-          paddingTop: 48,
-        }}
+        className={`fixed bottom-0 left-0 top-0 z-50 w-[300px] overflow-y-auto border-r border-outline-variant/50 bg-surface-low transition-transform duration-300 ease-emphasized lg:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
+        <button type="button" aria-label="Close menu" onClick={() => setMobileOpen(false)} className="m3-icon-btn absolute right-2 top-2 z-10">
+          <X size={18} />
+        </button>
         {sidebarContent}
       </aside>
 
-      {/* Desktop sidebar */}
-      <aside
-        className="fixed top-0 bottom-0 left-0 z-30 hidden lg:block overflow-y-auto"
-        style={{
-          width: 260,
-          backgroundColor: "#f7f7f7",
-          borderRight: "1px solid #d0d7de",
-          paddingTop: 48,
-        }}
-      >
+      {/* Desktop drawer */}
+      <aside className="fixed bottom-0 left-0 top-0 z-30 hidden w-[280px] overflow-y-auto border-r border-outline-variant/50 bg-surface-low pt-16 lg:block">
         {sidebarContent}
       </aside>
     </>
